@@ -879,27 +879,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gui-platform-ext"
-version = "0.1.0"
-source = "git+https://github.com/taurino-foundation/gui-platform-ext#98394134cb698a1675fcc14a88c7066c969e12b0"
-dependencies = [
- "anyhow",
- "dpi",
- "getrandom",
- "gtk",
- "image",
- "log",
- "objc2",
- "objc2-app-kit",
- "once_cell",
- "serde",
- "softbuffer",
- "tao",
- "webkit2gtk",
- "windows",
-]
-
-[[package]]
 name = "hashbrown"
 version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2088,7 +2067,7 @@ name = "sub"
 version = "0.1.0"
 dependencies = [
  "taurino-core",
- "tray-menu",
+ "taurino-menu",
 ]
 
 [[package]]
@@ -2207,7 +2186,7 @@ checksum = "61c41af27dd6d1e27b1b16b489db798443478cef1f06a660c96db617ba5de3b1"
 [[package]]
 name = "taurino-core"
 version = "0.1.0"
-source = "git+https://github.com/taurino-foundation/taurino-core#9f2427e4a911dbb7f1083623092bae682d363ed4"
+source = "git+https://github.com/taurino-foundation/taurino-core#ecea65b6761ab3e6d1b34bd9f96ec956be7d57ac"
 dependencies = [
  "anyhow",
  "dpi",
@@ -2229,6 +2208,14 @@ dependencies = [
  "webview2-com",
  "windows",
  "wry",
+]
+
+[[package]]
+name = "taurino-menu"
+version = "0.1.0"
+source = "git+https://github.com/taurino-foundation/taurino-menu#dcf3c3645d54c23c153e106a11d8320403f95eb1"
+dependencies = [
+ "taurino-core",
 ]
 
 [[package]]
@@ -2431,16 +2418,6 @@ dependencies = [
  "serde",
  "thiserror 2.0.21",
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "tray-menu"
-version = "0.1.0"
-source = "git+https://github.com/taurino-foundation/tray-menu#38c5604c5d78b9442e4202f835d7852d8e4af02d"
-dependencies = [
- "gui-platform-ext",
- "muda",
- "tray-icon",
 ]
 
 [[package]]
@@ -2973,9 +2950,9 @@ dependencies = [
 
 [[package]]
 name = "yoke-derive"
-version = "0.8.3"
+version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33811428bee40dbceb6d545e95754741d17a6aef9a4849f0fd62e2ba4f412a78"
+checksum = "ec8ebde2db3681e8c9980cc27822030e68752690ddfa9473e739aeb4dbde6d71"
 dependencies = [
  "proc-macro2",
  "quote",

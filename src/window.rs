@@ -12,6 +12,7 @@ use taurino_core::{
     anyhow::{Result, anyhow},
     dpi::{PhysicalPosition, PhysicalSize, Position, Size, Theme},
     image::Icon,
+    muda::MenuId,
     tao::{self, event_loop::EventLoopProxy, window::Window as Tao},
 };
 
@@ -35,15 +36,11 @@ use tao::platform::windows::WindowExtWindows;
 use taurino_core::softbuffer;
 
 use taurino_core::raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, WindowHandle};
-use tray_menu::{
-    menu::{
-        WindowMenu,
-        prelude::{
-            CheckMenuItem, IconMenuItem, IsMenuItem, Menu, MenuItem, MenuItemKind, NativeIcon, PredefinedMenuItem,
-            Submenu,
-        },
+use taurino_menu::{
+    WindowMenu,
+    prelude::{
+        CheckMenuItem, IconMenuItem, IsMenuItem, Menu, MenuItem, MenuItemKind, NativeIcon, PredefinedMenuItem, Submenu,
     },
-    native::muda::MenuId,
 };
 
 #[cfg(windows)]
