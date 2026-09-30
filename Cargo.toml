@@ -5,4 +5,4 @@ edition = "2024"
 
 [dependencies]
 taurino-core = { version = "0.1.0", git = "https://github.com/taurino-foundation/taurino-core" }
-tray-menu = { version = "0.1.0", git = "https://github.com/taurino-foundation/tray-menu" }
+taurino-menu = { version = "0.1.0", git = "https://github.com/taurino-foundation/tray-menu" }
