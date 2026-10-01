@@ -41,7 +41,7 @@ pub mod config;
 pub mod utils;
 pub mod webview;
 pub mod window;
-mod wrappers;
+pub mod wrappers;
 #[derive(Clone, Default)]
 pub struct WindowBuilder {
     pub inner: TaoWindowBuilder,
