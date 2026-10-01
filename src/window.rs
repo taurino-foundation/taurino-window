@@ -89,7 +89,7 @@ impl Window {
     pub fn new(
         inner: Option<Arc<Tao>>,
         menu: Arc<Mutex<Option<WindowMenu>>>,
-        webviews: Vec<WebView>,
+        webviews:&[WebView],
         label: String,
         #[cfg(windows)] background_color: Arc<Mutex<Option<tao::window::RGBA>>>,
         #[cfg(windows)] is_window_transparent: bool,
@@ -100,7 +100,7 @@ impl Window {
         Self {
             inner,
             menu,
-            webviews,
+            webviews:webviews.to_vec(),
             label,
             #[cfg(windows)]
             background_color,
