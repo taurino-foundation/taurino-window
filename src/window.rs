@@ -16,6 +16,15 @@ use taurino_core::{
     tao::{self, event_loop::EventLoopProxy, window::Window as Tao},
 };
 
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
+use taurino_core::gtk;
+
 #[cfg(target_os = "android")]
 use tao::platform::android::WindowExtAndroid;
 #[cfg(target_os = "ios")]
@@ -45,21 +54,19 @@ use taurino_menu::{
 
 #[cfg(windows)]
 use crate::config::FocusState;
-// Importpfad aus dem auskommentierten Import im Anhang übernommen.
-// Bei einer Definition in `config` nur diesen Import anpassen.
+// Importpfad korrigiert: `TitleBarStyle` liegt in `config`, nicht in `types`.
 #[cfg(target_os = "macos")]
-use crate::types::TitleBarStyle;
+use crate::config::TitleBarStyle;
 use crate::{
     config::{Color, CursorIcon, Monitor, ProgressBarState, ResizeDirection, UserAttentionType, WindowSizeConstraints},
     webview::{WebView, inner_size},
     wrappers::{CursorIconWrapper, MonitorHandleWrapper, ProgressBarStateWrapper, UserAttentionTypeWrapper},
 };
-
 /// GUI-threadgebundener Wrapper. Die WebViews machen ihn nicht Send/Sync.
 ///
 /// WebViews und Surface stehen vor `inner`, damit ihre lokalen Besitzer beim
 /// regulären Drop vor dem lokalen Tao-Handle freigegeben werden.
-/// Externe Klone können die jeweiligen Ressourcen weiterhin am Leben halten.
+/// Externe Klone können die jeweiligen Ressourcen weiterin am Leben halten.
 pub struct Window {
     /// Native Menüanbindung und deren Lebensdauer verwaltet der MenuManager.
     /// Ein app-weites Menü darf beim Schließen dieses Fensters erhalten bleiben.

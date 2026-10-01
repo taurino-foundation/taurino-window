@@ -1,40 +1,21 @@
-// `unimplemented!()` ist ein Makro, kein Import – die Zeile muss weg.
-
-use anyhow::Context;
-
-use tao::{
-    event_loop::DeviceEventFilter as TaoDeviceEventFilter,
-    monitor::MonitorHandle,
-    window::{
-        CursorIcon as TaoCursorIcon, Icon as TaoWindowIcon, ProgressBarState as TaoProgressBarState,
-        ProgressState as TaoProgressState, UserAttentionType as TaoUserAttentionType,
+use taurino_core::{
+    MonitorExt,
+    anyhow::{self, Context},
+    dpi::Rect,
+    image::Icon,
+    tao::{
+        event_loop::DeviceEventFilter as TaoDeviceEventFilter,
+        monitor::MonitorHandle,
+        window::{
+            CursorIcon as TaoCursorIcon, Icon as TaoWindowIcon, ProgressBarState as TaoProgressBarState,
+            ProgressState as TaoProgressState, UserAttentionType as TaoUserAttentionType,
+        },
     },
 };
-use taurino_core::{MonitorExt, anyhow, dpi::Rect, image::Icon, tao};
-
-// --- Platform-spezifische Imports ---
-
-#[cfg(target_os = "macos")]
-use gui_platform_ext::tao::platform::macos::ActivationPolicy as TaoActivationPolicy;
 
 use crate::config::{CursorIcon, DeviceEventFilter, Monitor, ProgressBarState, ProgressBarStatus, UserAttentionType};
-// Falls `ActivationPolicy` in deinem eigenen `types`-Modul liegt:
-#[cfg(target_os = "macos")]
-use crate::config::ActivationPolicy;
 
-// Nur falls du `find_monitor_for_position` wirklich plattformabhängig brauchst:
-// (meist nicht nötig – Position aus `dpi` ist plattformunabhängig)
 /// Wrapper around a [`tao::window::Icon`] that can be created from an [`Icon`].
-pub struct TaoIconWrapper(pub TaoWindowIcon);
-
-impl TryFrom<Icon<'_>> for TaoIconWrapper {
-    type Error = anyhow::Error;
-    fn try_from(icon: Icon<'_>) -> anyhow::Result<Self> {
-        TaoWindowIcon::from_rgba(icon.rgba.to_vec(), icon.width, icon.height)
-            .map(Self)
-            .context("invalid icon")
-    }
-}
 
 pub struct DeviceEventFilterWrapper(pub TaoDeviceEventFilter);
 
@@ -63,6 +44,7 @@ impl From<MonitorHandleWrapper> for Monitor {
 }
 
 pub struct RectWrapper(pub taurino_core::wry::Rect);
+
 impl From<Rect> for RectWrapper {
     fn from(value: Rect) -> Self {
         RectWrapper(taurino_core::wry::Rect {
@@ -91,6 +73,7 @@ pub struct CursorIconWrapper(pub TaoCursorIcon);
 impl From<CursorIcon> for CursorIconWrapper {
     fn from(icon: CursorIcon) -> Self {
         use CursorIcon::*;
+
         let i = match icon {
             Default => TaoCursorIcon::Default,
             Crosshair => TaoCursorIcon::Crosshair,
@@ -130,6 +113,7 @@ impl From<CursorIcon> for CursorIconWrapper {
             #[allow(unreachable_patterns)]
             _ => TaoCursorIcon::Default,
         };
+
         Self(i)
     }
 }
@@ -145,6 +129,7 @@ impl From<ProgressBarStatus> for ProgressStateWrapper {
             ProgressBarStatus::Paused => TaoProgressState::Paused,
             ProgressBarStatus::Error => TaoProgressState::Error,
         };
+
         Self(state)
     }
 }
@@ -166,6 +151,7 @@ pub struct TaoIcon(pub TaoWindowIcon);
 
 impl TryFrom<Icon<'_>> for TaoIcon {
     type Error = anyhow::Error;
+
     fn try_from(icon: Icon<'_>) -> std::result::Result<Self, Self::Error> {
         TaoWindowIcon::from_rgba(icon.rgba.to_vec(), icon.width, icon.height)
             .map(Self)
