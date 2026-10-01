@@ -72,6 +72,7 @@ pub struct Window {
     /// Ein app-weites Menü darf beim Schließen dieses Fensters erhalten bleiben.
     pub(crate) menu: Arc<Mutex<Option<WindowMenu>>>,
     pub label: String,
+    pub id:u32,
     pub webviews: Vec<WebView>,
     #[cfg(windows)]
     pub background_color: Arc<Mutex<Option<tao::window::RGBA>>>,
@@ -87,6 +88,7 @@ pub struct Window {
 
 impl Window {
     pub fn new(
+        id:u32,
         inner: Option<Arc<Tao>>,
         menu: Arc<Mutex<Option<WindowMenu>>>,
         webviews:&[WebView],
@@ -98,6 +100,7 @@ impl Window {
         has_children: AtomicBool,
     ) -> Self {
         Self {
+            id,
             inner,
             menu,
             webviews:webviews.to_vec(),
@@ -121,6 +124,11 @@ impl Window {
         &self.label
     }
 
+
+/// Gibt die interne u32-Fenster-ID zurück (nicht die Tao-WindowId).
+pub fn id(&self) -> u32 {
+    self.id
+}
     /// Liefert das native Fenster oder einen Fehler nach dessen Entnahme.
     pub fn tao(&self) -> Result<&Arc<Tao>> {
         self.inner
