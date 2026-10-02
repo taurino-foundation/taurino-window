@@ -86,10 +86,10 @@ impl WindowBuilder {
             // By setting the default style to `TitleBarStyle::Visible` should fix the issue for most of the users.
             builder = builder.title_bar_style(TitleBarStyle::Visible);
         }
-        builder = builder.title("Tauri App");
+        builder = builder.title("Taurino App");
         #[cfg(windows)]
         {
-            builder = builder.window_classname("Tauri Window");
+            builder = builder.window_classname("Taurino Window");
         }
         builder
     }
