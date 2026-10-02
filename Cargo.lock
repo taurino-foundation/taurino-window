@@ -2063,14 +2063,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sub"
-version = "0.1.0"
-dependencies = [
- "taurino-core",
- "taurino-menu",
-]
-
-[[package]]
 name = "syn"
 version = "1.0.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2186,7 +2178,7 @@ checksum = "61c41af27dd6d1e27b1b16b489db798443478cef1f06a660c96db617ba5de3b1"
 [[package]]
 name = "taurino-core"
 version = "0.1.0"
-source = "git+https://github.com/taurino-foundation/taurino-core#ecea65b6761ab3e6d1b34bd9f96ec956be7d57ac"
+source = "git+https://github.com/taurino-foundation/taurino-core#cf24efb00ff0a6b3edb47f7752d51a819136cc5c"
 dependencies = [
  "anyhow",
  "dpi",
@@ -2216,6 +2208,14 @@ version = "0.1.0"
 source = "git+https://github.com/taurino-foundation/taurino-menu#dcf3c3645d54c23c153e106a11d8320403f95eb1"
 dependencies = [
  "taurino-core",
+]
+
+[[package]]
+name = "taurino-window"
+version = "0.1.0"
+dependencies = [
+ "taurino-core",
+ "taurino-menu",
 ]
 
 [[package]]

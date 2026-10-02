@@ -16,6 +16,7 @@ use taurino_core::objc2_app_kit::NSView;
 #[cfg(windows)]
 use taurino_core::tao::platform::windows::WindowExtWindows;
 use taurino_core::{
+    WebViewId, WindowId,
     anyhow::{Result, anyhow},
     dpi::PhysicalSize,
     tao::{self, window::Window},
@@ -31,8 +32,8 @@ use taurino_core::{
 #[derive(Clone)]
 pub struct WebView {
     label: String,
-    id: u32,
-    window_id: Arc<Mutex<u32>>,
+    id: WebViewId,
+    window_id: Arc<Mutex<WindowId>>,
     inner: Rc<taurino_core::wry::WebView>,
     context_store: WebContextStore,
     context_key: Option<PathBuf>,
@@ -47,9 +48,9 @@ impl WebView {
     /// Weitere Handles derselben WebView über `clone()` erzeugen,
     /// nicht durch erneute Aufrufe von `new()` mit demselben `inner`.
     pub fn new(
-        id: u32,
+        id: WebViewId,
         label: impl Into<String>,
-        window_id: Arc<Mutex<u32>>,
+        window_id: Arc<Mutex<WindowId>>,
         inner: Rc<taurino_core::wry::WebView>,
         context_key: Option<PathBuf>,
         context_store: WebContextStore,
@@ -68,7 +69,7 @@ impl WebView {
     // --------------------------------------------------------
     // Identität
     // --------------------------------------------------------
-    pub fn id(&self) -> u32 {
+    pub fn id(&self) -> WebViewId {
         self.id
     }
     pub fn label(&self) -> &str {
@@ -77,17 +78,17 @@ impl WebView {
     // --------------------------------------------------------
     // Fensterzuordnung
     // --------------------------------------------------------
-    pub fn window_id(&self) -> u32 {
+    pub fn window_id(&self) -> WindowId {
         *self.window_id.lock().expect("WebView window_id mutex is poisoned")
     }
-    pub fn window_id_handle(&self) -> Arc<Mutex<u32>> {
+    pub fn window_id_handle(&self) -> Arc<Mutex<WindowId>> {
         Arc::clone(&self.window_id)
     }
     /// Ändert ausschließlich die gespeicherte Fenster-ID.
     ///
     /// Die native WebView wird dadurch nicht verschoben.
     /// Für einen Fensterwechsel normalerweise `reparent()` verwenden.
-    pub fn set_window_id(&self, window_id: u32) {
+    pub fn set_window_id(&self, window_id: WindowId) {
         *self.window_id.lock().expect("WebView window_id mutex is poisoned") = window_id;
     }
     // --------------------------------------------------------

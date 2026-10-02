@@ -8,7 +8,7 @@ use std::sync::{
 };
 
 use taurino_core::{
-    WindowExt,
+    WebViewId, WindowExt, WindowId,
     anyhow::{Result, anyhow},
     dpi::{PhysicalPosition, PhysicalSize, Position, Size, Theme},
     image::Icon,
@@ -72,7 +72,7 @@ pub struct Window {
     /// Ein app-weites Menü darf beim Schließen dieses Fensters erhalten bleiben.
     pub(crate) menu: Arc<Mutex<Option<WindowMenu>>>,
     pub label: String,
-    pub id:u32,
+    pub id: WindowId,
     pub webviews: Vec<WebView>,
     #[cfg(windows)]
     pub background_color: Arc<Mutex<Option<tao::window::RGBA>>>,
@@ -88,10 +88,10 @@ pub struct Window {
 
 impl Window {
     pub fn new(
-        id:u32,
+        id: WindowId,
         inner: Option<Arc<Tao>>,
         menu: Arc<Mutex<Option<WindowMenu>>>,
-        webviews:&[WebView],
+        webviews: &[WebView],
         label: String,
         #[cfg(windows)] background_color: Arc<Mutex<Option<tao::window::RGBA>>>,
         #[cfg(windows)] is_window_transparent: bool,
@@ -103,7 +103,7 @@ impl Window {
             id,
             inner,
             menu,
-            webviews:webviews.to_vec(),
+            webviews: webviews.to_vec(),
             label,
             #[cfg(windows)]
             background_color,
@@ -124,11 +124,10 @@ impl Window {
         &self.label
     }
 
-
-/// Gibt die interne u32-Fenster-ID zurück (nicht die Tao-WindowId).
-pub fn id(&self) -> u32 {
-    self.id
-}
+    /// Gibt die interne u32-Fenster-ID zurück (nicht die Tao-WindowId).
+    pub fn id(&self) -> WindowId {
+        self.id
+    }
     /// Liefert das native Fenster oder einen Fehler nach dessen Entnahme.
     pub fn tao(&self) -> Result<&Arc<Tao>> {
         self.inner
@@ -1173,7 +1172,7 @@ impl Window {
         &self.webviews
     }
 
-    pub fn webview(&self, id: u32) -> Option<&WebView> {
+    pub fn webview(&self, id: WebViewId) -> Option<&WebView> {
         self.webviews.iter().find(|webview| webview.id() == id)
     }
 
