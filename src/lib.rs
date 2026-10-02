@@ -1,3 +1,13 @@
+use std::{
+    collections::HashMap,
+    sync::{
+        Arc,
+        atomic::{AtomicU32, Ordering},
+    },
+};
+
+use anyhow::{Result, anyhow};
+
 #[cfg(target_os = "macos")]
 use crate::config::TitleBarStyle;
 use crate::{

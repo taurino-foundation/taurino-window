@@ -59,7 +59,7 @@ use crate::config::FocusState;
 use crate::config::TitleBarStyle;
 use crate::{
     config::{Color, CursorIcon, Monitor, ProgressBarState, ResizeDirection, UserAttentionType, WindowSizeConstraints},
-    webview::{WebView, inner_size},
+    webview::{WebView, WebViewManager, inner_size},
     wrappers::{CursorIconWrapper, MonitorHandleWrapper, ProgressBarStateWrapper, UserAttentionTypeWrapper},
 };
 /// GUI-threadgebundener Wrapper. Die WebViews machen ihn nicht Send/Sync.
@@ -73,7 +73,7 @@ pub struct Window {
     pub(crate) menu: Arc<Mutex<Option<WindowMenu>>>,
     pub label: String,
     pub id: WindowId,
-    pub webviews: Vec<WebView>,
+    pub webviews_manager: WebViewManager,
     #[cfg(windows)]
     pub background_color: Arc<Mutex<Option<tao::window::RGBA>>>,
     #[cfg(windows)]
@@ -91,7 +91,7 @@ impl Window {
         id: WindowId,
         inner: Option<Arc<Tao>>,
         menu: Arc<Mutex<Option<WindowMenu>>>,
-        webviews: &[WebView],
+        webviews_manager: WebViewManager,
         label: String,
         #[cfg(windows)] background_color: Arc<Mutex<Option<tao::window::RGBA>>>,
         #[cfg(windows)] is_window_transparent: bool,
@@ -103,7 +103,7 @@ impl Window {
             id,
             inner,
             menu,
-            webviews: webviews.to_vec(),
+            webviews_manager,
             label,
             #[cfg(windows)]
             background_color,
@@ -239,7 +239,7 @@ impl Window {
     pub fn inner_size(&self) -> Result<PhysicalSize<u32>> {
         let has_children = self.has_children();
         let inner = self.tao()?;
-        Ok(inner_size(inner, &self.webviews, has_children))
+        Ok(inner_size(inner, &self.webviews_manager.webviews(), has_children))
     }
 
     /// Returns the physical size of the entire window.
@@ -562,7 +562,7 @@ impl Window {
         };
 
         // Abhängige Ressourcen freigeben, solange self.inner noch existiert.
-        self.webviews.clear();
+        self.webviews_manager.clear();
         self.set_has_child_webviews(false);
         #[cfg(windows)]
         drop(surface);
@@ -1169,15 +1169,21 @@ impl Window {
     }
 
     pub fn webviews(&self) -> &[WebView] {
-        &self.webviews
+        &self.webviews_manager.webviews()
     }
 
     pub fn webview(&self, id: WebViewId) -> Option<&WebView> {
-        self.webviews.iter().find(|webview| webview.id() == id)
+        self.webviews_manager
+            .webviews()
+            .iter()
+            .find(|webview| webview.id() == id)
     }
 
     pub fn webview_by_label(&self, label: &str) -> Option<&WebView> {
-        self.webviews.iter().find(|webview| webview.label() == label)
+        self.webviews_manager
+            .webviews()
+            .iter()
+            .find(|webview| webview.label() == label)
     }
 
     /// Fordert Zeichnen an; zeichnet nicht synchron an dieser Aufrufstelle.

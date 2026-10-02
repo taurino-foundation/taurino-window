@@ -2,10 +2,14 @@
 use crate::config::FocusState;
 use crate::utils::{WebContextStore, WebviewBounds};
 use std::{
+    collections::HashMap,
     ops::Deref,
     path::PathBuf,
     rc::Rc,
-    sync::{Arc, Mutex},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU32, Ordering},
+    },
 };
 #[cfg(target_os = "macos")]
 use taurino_core::dpi::LogicalSize;
@@ -365,5 +369,233 @@ pub fn add_focus_change_listeners(
         log::error!(
             "Failed to attach WebView2 `add_LostFocus` handler, `WindowEvent::Focused` will not be sent: {error}"
         );
+    }
+}
+
+/// Manages the WebViews associated with a single window.
+///
+/// WebViews are stored in a contiguous [`Vec`] to preserve their insertion
+/// order and allow callers to access them as a slice.
+///
+/// Additional lookup maps provide efficient access by WebView ID and label
+/// without requiring a linear scan through the WebView collection.
+pub struct WebViewManager {
+    /// WebViews in registration order.
+    webviews: Vec<WebView>,
+
+    /// Maps a WebView ID to its current index inside [`Self::webviews`].
+    id_index: HashMap<WebViewId, usize>,
+
+    /// Maps a WebView label to its current index inside [`Self::webviews`].
+    label_index: HashMap<String, usize>,
+
+    /// Monotonically increasing source for WebView IDs.
+    ///
+    /// IDs start at `1` and are not reused after a WebView is removed.
+    next_webview_id: Arc<AtomicU32>,
+}
+
+impl WebViewManager {
+    /// Creates an empty WebView manager.
+    pub fn new() -> Result<Self> {
+        Ok(Self {
+            webviews: Vec::new(),
+            id_index: HashMap::new(),
+            label_index: HashMap::new(),
+            next_webview_id: Arc::new(AtomicU32::new(1)),
+        })
+    }
+
+    // =========================================================================
+    // IDs
+    // =========================================================================
+
+    /// Allocates and returns the next engine-level WebView ID.
+    pub fn next_webview_id(&self) -> WebViewId {
+        self.next_webview_id.fetch_add(1, Ordering::Relaxed).into()
+    }
+
+    // =========================================================================
+    // Registration
+    // =========================================================================
+
+    /// Registers an already-created WebView.
+    ///
+    /// The WebView collection and both lookup indices are updated together.
+    pub fn insert(&mut self, webview: WebView) -> Result<()> {
+        let id = webview.id();
+        let label = webview.label().to_string();
+
+        if self.id_index.contains_key(&id) {
+            return Err(anyhow!("WebView with id {:?} is already registered", id));
+        }
+
+        if self.label_index.contains_key(&label) {
+            return Err(anyhow!("WebView with label {:?} is already registered", label));
+        }
+
+        let index = self.webviews.len();
+
+        self.webviews.push(webview);
+        self.id_index.insert(id, index);
+        self.label_index.insert(label, index);
+
+        Ok(())
+    }
+
+    // =========================================================================
+    // Lookup by ID
+    // =========================================================================
+
+    /// Returns a WebView by its engine-level ID.
+    pub fn get_by_id(&self, id: WebViewId) -> Option<&WebView> {
+        let index = *self.id_index.get(&id)?;
+        self.webviews.get(index)
+    }
+
+    /// Returns a mutable WebView by its engine-level ID.
+    pub fn get_by_id_mut(&mut self, id: WebViewId) -> Option<&mut WebView> {
+        let index = *self.id_index.get(&id)?;
+        self.webviews.get_mut(index)
+    }
+
+    /// Returns a WebView by ID or an error if it is not registered.
+    pub fn get(&self, id: WebViewId) -> Result<&WebView> {
+        self.get_by_id(id)
+            .ok_or_else(|| anyhow!("WebView with id {:?} is not registered", id))
+    }
+
+    // =========================================================================
+    // Lookup by label
+    // =========================================================================
+
+    /// Returns a WebView by its label.
+    ///
+    /// Lookup is performed through the label index and does not scan
+    /// the WebView collection.
+    pub fn get_by_label(&self, label: &str) -> Option<&WebView> {
+        let index = *self.label_index.get(label)?;
+        self.webviews.get(index)
+    }
+
+    /// Returns a mutable WebView by its label.
+    pub fn get_by_label_mut(&mut self, label: &str) -> Option<&mut WebView> {
+        let index = *self.label_index.get(label)?;
+        self.webviews.get_mut(index)
+    }
+
+    /// Resolves a WebView label to its engine-level ID.
+    pub fn id_by_label(&self, label: &str) -> Option<WebViewId> {
+        self.get_by_label(label).map(WebView::id)
+    }
+
+    /// Returns the label associated with a WebView ID.
+    pub fn label(&self, id: WebViewId) -> Option<&str> {
+        self.get_by_id(id).map(WebView::label)
+    }
+
+    // =========================================================================
+    // Existence
+    // =========================================================================
+
+    /// Returns whether a WebView with the given ID is registered.
+    pub fn contains(&self, id: WebViewId) -> bool {
+        self.id_index.contains_key(&id)
+    }
+
+    /// Returns whether a WebView with the given label is registered.
+    pub fn contains_label(&self, label: &str) -> bool {
+        self.label_index.contains_key(label)
+    }
+
+    // =========================================================================
+    // Removal
+    // =========================================================================
+
+    /// Removes and returns a WebView by its engine-level ID.
+    ///
+    /// The relative order of all remaining WebViews is preserved.
+    pub fn remove(&mut self, id: WebViewId) -> Option<WebView> {
+        let index = *self.id_index.get(&id)?;
+
+        self.remove_at(index)
+    }
+
+    /// Removes and returns a WebView by its label.
+    ///
+    /// The relative order of all remaining WebViews is preserved.
+    pub fn remove_by_label(&mut self, label: &str) -> Option<WebView> {
+        let index = *self.label_index.get(label)?;
+
+        self.remove_at(index)
+    }
+
+    /// Removes a WebView at the specified index and rebuilds the affected
+    /// lookup indices.
+    fn remove_at(&mut self, index: usize) -> Option<WebView> {
+        if index >= self.webviews.len() {
+            return None;
+        }
+
+        let webview = self.webviews.remove(index);
+
+        self.id_index.remove(&webview.id());
+        self.label_index.remove(webview.label());
+
+        // `Vec::remove` shifts every element after `index` one position
+        // to the left. Update both lookup maps to keep them synchronized
+        // with the WebView collection.
+        for current_index in index..self.webviews.len() {
+            let current = &self.webviews[current_index];
+
+            self.id_index.insert(current.id(), current_index);
+
+            self.label_index.insert(current.label().to_string(), current_index);
+        }
+
+        Some(webview)
+    }
+
+    // =========================================================================
+    // Collections
+    // =========================================================================
+
+    /// Returns all managed WebViews as a contiguous slice.
+    pub fn webviews(&self) -> &[WebView] {
+        &self.webviews
+    }
+
+    /// Returns all managed WebViews as a mutable slice.
+    ///
+    /// Callers must not modify properties used as lookup keys, such as the
+    /// WebView ID or label, without updating the manager indices accordingly.
+    pub fn webviews_mut(&mut self) -> &mut [WebView] {
+        &mut self.webviews
+    }
+
+    /// Returns the number of registered WebViews.
+    pub fn len(&self) -> usize {
+        self.webviews.len()
+    }
+
+    /// Returns whether no WebViews are currently registered.
+    pub fn is_empty(&self) -> bool {
+        self.webviews.is_empty()
+    }
+
+    /// Returns whether more than one WebView is currently registered.
+    pub fn has_multiple_webviews(&self) -> bool {
+        self.webviews.len() > 1
+    }
+
+    // =========================================================================
+    // Clear
+    // =========================================================================
+
+    /// Removes all registered WebViews and clears all lookup indices.
+    pub fn clear(&mut self) {
+        self.webviews.clear();
+        self.id_index.clear();
+        self.label_index.clear();
     }
 }
