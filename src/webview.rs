@@ -44,13 +44,13 @@ pub struct WebView {
     bounds: Arc<Mutex<Option<WebviewBounds>>>,
 }
 impl WebView {
-    /// Übernimmt eine bereits erstellte native WebView.
+    /// Adopts an already-created native WebView.
     ///
-    /// Der zugehörige Kontext und dessen Label-Registrierung müssen
-    /// bereits vom aufrufenden Code eingerichtet worden sein.
+    /// The associated context and its label registration must already have been
+    /// set up by the calling code.
     ///
-    /// Weitere Handles derselben WebView über `clone()` erzeugen,
-    /// nicht durch erneute Aufrufe von `new()` mit demselben `inner`.
+    /// To obtain additional handles to the same WebView, use `clone()` rather
+    /// than calling `new()` again with the same `inner`.
     pub fn new(
         id: WebViewId,
         label: impl Into<String>,
@@ -71,7 +71,7 @@ impl WebView {
         }
     }
     // --------------------------------------------------------
-    // Identität
+    // Identity
     // --------------------------------------------------------
     pub fn id(&self) -> WebViewId {
         self.id
@@ -80,7 +80,7 @@ impl WebView {
         &self.label
     }
     // --------------------------------------------------------
-    // Fensterzuordnung
+    // Window association
     // --------------------------------------------------------
     pub fn window_id(&self) -> WindowId {
         *self.window_id.lock().expect("WebView window_id mutex is poisoned")
@@ -88,73 +88,72 @@ impl WebView {
     pub fn window_id_handle(&self) -> Arc<Mutex<WindowId>> {
         Arc::clone(&self.window_id)
     }
-    /// Ändert ausschließlich die gespeicherte Fenster-ID.
+    /// Changes only the stored window ID.
     ///
-    /// Die native WebView wird dadurch nicht verschoben.
-    /// Für einen Fensterwechsel normalerweise `reparent()` verwenden.
+    /// The native WebView is not moved by this operation.
+    /// For an actual window change, normally use `reparent()`.
     pub fn set_window_id(&self, window_id: WindowId) {
         *self.window_id.lock().expect("WebView window_id mutex is poisoned") = window_id;
     }
     // --------------------------------------------------------
     // Native WebView
     // --------------------------------------------------------
-    /// Liefert den vorhandenen Rc, ohne ihn zu klonen.
+    /// Returns the existing Rc without cloning it.
     ///
-    /// Ein extern erzeugter Rc-Klon darf nicht länger als alle
-    /// WebView-Wrapper leben, wenn deren Drop die Kontextreferenz
-    /// zuverlässig entfernen soll.
+    /// An externally created Rc clone must not outlive all WebView wrappers if
+    /// their drop is to reliably remove the context reference.
     pub fn inner(&self) -> &Rc<taurino_core::wry::WebView> {
         &self.inner
     }
-    /// Eindeutiger Zugriff auf Wry, auch bei gleichnamigen Methoden.
+    /// Unique access to Wry, even in the presence of identically named methods.
     pub fn as_wry(&self) -> &taurino_core::wry::WebView {
         self.inner.as_ref()
     }
-    /// Bestehender Low-Level-Zugriff aus deiner ursprünglichen API.
+    /// Existing low-level access from the original API.
     ///
-    /// Das Austauschen des Rc aktualisiert weder Kontextreferenzen
-    /// noch Fensterzuordnung oder Bounds.
-    #[deprecated(note = "Das Ersetzen von inner umgeht die Kontextverwaltung. \
-                Für normale Wry-Aufrufe as_wry() verwenden.")]
+    /// Replacing the Rc updates neither context references nor window
+    /// association nor bounds.
+    #[deprecated(note = "Replacing inner bypasses context management. \
+                For normal Wry calls use as_wry().")]
     pub fn inner_mut(&mut self) -> &mut Rc<taurino_core::wry::WebView> {
         &mut self.inner
     }
     // --------------------------------------------------------
-    // Kontext
+    // Context
     // --------------------------------------------------------
-    /// Liefert den unveränderten Schlüssel für den Context-Store.
+    /// Returns the unmodified key used for the context store.
     pub fn context_key(&self) -> &Option<PathBuf> {
         &self.context_key
     }
     pub fn context_store(&self) -> &WebContextStore {
         &self.context_store
     }
-    /// Klont den gemeinsam genutzten Store-Handle.
+    /// Clones the shared store handle.
     pub fn context_store_handle(&self) -> WebContextStore {
         self.context_store.clone()
     }
     // --------------------------------------------------------
-    // Gespeicherte Layout-Bounds
+    // Cached layout bounds
     // --------------------------------------------------------
-    /// Liest die gespeicherten Bounds, ohne sie zu entfernen.
+    /// Reads the stored bounds without removing them.
     ///
-    /// Dies ist NICHT taurino_core::wry::WebView::bounds().
-    /// WebviewBounds muss Clone implementieren.
+    /// This is NOT taurino_core::wry::WebView::bounds().
+    /// WebviewBounds must implement Clone.
     pub fn bounds(&self) -> Option<WebviewBounds> {
         self.bounds.lock().expect("WebView bounds mutex is poisoned").clone()
     }
     pub fn bounds_handle(&self) -> Arc<Mutex<Option<WebviewBounds>>> {
         Arc::clone(&self.bounds)
     }
-    /// Ändert ausschließlich die gespeicherten Layout-Daten.
+    /// Changes only the stored layout data.
     ///
-    /// Position und Größe der nativen WebView bleiben unverändert.
+    /// The position and size of the native WebView remain unchanged.
     pub fn set_cached_bounds(&self, bounds: Option<WebviewBounds>) {
         *self.bounds.lock().expect("WebView bounds mutex is poisoned") = bounds;
     }
-    /// Entnimmt die gespeicherten Bounds.
+    /// Takes the stored bounds.
     ///
-    /// Danach enthalten alle Wrapper-Klone an dieser Stelle None.
+    /// Afterwards all wrapper clones hold None at this location.
     pub fn take_bounds(&self) -> Option<WebviewBounds> {
         self.bounds.lock().expect("WebView bounds mutex is poisoned").take()
     }
@@ -162,18 +161,18 @@ impl WebView {
         self.set_cached_bounds(None);
     }
     // --------------------------------------------------------
-    // Tatsächliche native Geometrie
+    // Actual native geometry
     // --------------------------------------------------------
-    /// Fragt die aktuelle Geometrie direkt bei Wry ab.
+    /// Queries the current geometry directly from Wry.
     pub fn native_bounds(&self) -> Result<taurino_core::wry::Rect> {
         self.as_wry()
             .bounds()
             .map_err(|error| anyhow!("failed to read native bounds for webview '{}': {error}", self.label))
     }
-    /// Ändert die native Geometrie.
+    /// Changes the native geometry.
     ///
-    /// Die gespeicherten WebviewBounds werden nicht automatisch
-    /// angepasst: deren Umrechnung gehört in deinen Layout-Code.
+    /// The stored WebviewBounds are not adjusted automatically: their
+    /// conversion belongs in your layout code.
     pub fn set_window_bounds(&self, bounds: taurino_core::wry::Rect) -> Result<()> {
         self.as_wry()
             .set_bounds(bounds)
@@ -181,7 +180,7 @@ impl WebView {
     }
 }
 // ------------------------------------------------------------
-// Trait-Implementierungen
+// Trait implementations
 // ------------------------------------------------------------
 impl Deref for WebView {
     type Target = taurino_core::wry::WebView;
@@ -196,26 +195,26 @@ impl AsRef<taurino_core::wry::WebView> for WebView {
 }
 impl Drop for WebView {
     fn drop(&mut self) {
-        // Nur aufräumen, wenn dieser Wrapper den letzten starken
-        // Rc auf die native WebView hält.
+        // Only clean up if this wrapper holds the last strong Rc
+        // to the native WebView.
         //
-        // Anders als Rc::get_mut berücksichtigt dieser Test nicht
-        // zusätzlich vorhandene Weak-Referenzen.
+        // Unlike Rc::get_mut, this check does not additionally account for
+        // existing Weak references.
         if Rc::strong_count(&self.inner) != 1 {
             return;
         }
-        // Bei einem vergifteten Store keine weitere Panic auslösen.
-        // In diesem Fehlerfall bleibt die Registrierung erhalten.
+        // Do not trigger another panic on a poisoned store.
+        // In that error case the registration is left in place.
         //
-        // Den Wrapper nicht droppen, während derselbe Thread
-        // bereits den Context-Store-Lock hält.
+        // Do not drop the wrapper while the same thread already holds the
+        // context store lock.
         let Ok(mut context_store) = self.context_store.lock() else {
             return;
         };
         if let Some(web_context) = context_store.get_mut(&self.context_key) {
             web_context.referenced_by_webviews.remove(&self.label);
-            // Linux/BSD: Kontext zur Wiederverwendung behalten.
-            // Andere Plattformen: ungenutzten Kontext entfernen.
+            // Linux/BSD: keep the context for reuse.
+            // Other platforms: remove the unused context.
             #[cfg(not(any(
                 target_os = "linux",
                 target_os = "dragonfly",
@@ -230,7 +229,7 @@ impl Drop for WebView {
     }
 }
 // ------------------------------------------------------------
-// Freie Funktionen für bestehende Aufrufstellen
+// Free functions for existing call sites
 // ------------------------------------------------------------
 #[cfg(target_os = "macos")]
 pub fn reparent_native(webview: &WebView, target: &Arc<tao::window::Window>) -> Result<()> {
@@ -276,17 +275,17 @@ pub fn inner_size(window: &Window, webviews: &[WebView], has_children: bool) -> 
                 MainThreadMarker::new().expect("native view measurement must run on the macOS main thread");
             let native_webview = webview.as_wry().webview();
             // SAFETY:
-            // Wry liefert seine WKWebView-Unterklasse zurück.
-            // WKWebView ist auf macOS eine NSView-Unterklasse.
-            // Der Zugriff erfolgt nach Prüfung auf dem Main Thread.
+            // Wry returns its WKWebView subclass.
+            // WKWebView is an NSView subclass on macOS.
+            // Access occurs after verification on the main thread.
             let view = unsafe { Retained::cast_unchecked::<NSView>(native_webview) };
             let frame = view.frame();
             return LogicalSize::<f64>::new(frame.size.width, frame.size.height).to_physical(window.scale_factor());
         }
     }
     let size = window.inner_size();
-    // Explizite Übernahme vermeidet eine Abhängigkeit davon,
-    // ob taurino_core::dpi und Tao identische Typen reexportieren.
+    // Explicit conversion avoids a dependency on whether taurino_core::dpi
+    // and Tao re-export identical types.
     PhysicalSize::new(size.width, size.height)
 }
 #[cfg(not(target_os = "macos"))]
@@ -317,7 +316,7 @@ pub fn add_focus_change_listeners(
         controller.add_GotFocus(
             &FocusChangedEventHandler::create(Box::new(move |_, _| {
                 let mut focused_webview = focused_webview_.lock().unwrap();
-                // when using multiwebview mode, we should check if the focus change is actually a "webview focus change"
+                // When using multi-webview mode, we should check if the focus change is actually a "webview focus change"
                 // instead of a window focus change (here we're patching window events, so we only care about the actual window changing focus)
                 let already_focused = matches!(
                     *focused_webview,
@@ -344,17 +343,17 @@ pub fn add_focus_change_listeners(
             &FocusChangedEventHandler::create(Box::new(move |_, _| {
                 use crate::config::FocusState;
                 let mut focused_webview = focused_webview.lock().unwrap();
-                // when using multiwebview mode, we should handle webview focus changes
-                // so we check is the currently focused webview matches this webview's
+                // When using multi-webview mode, we should handle webview focus changes
+                // so we check whether the currently focused webview matches this webview's
                 // (in this case, it means we lost the window focus)
                 //
-                // on multiwebview mode if we change focus to a different webview
+                // In multi-webview mode, if we change focus to a different webview
                 // we get the gotFocus event of the other webview before the lostFocus
                 // so this check makes sense
                 if let FocusState::WebviewFocused { ref webview_label } = *focused_webview {
                     let lost_window_focus = webview_label == &label;
                     if lost_window_focus {
-                        // only reset when we lost window focus - otherwise some other webview is focused
+                        // Only reset when we lost window focus - otherwise some other webview is focused
                         *focused_webview = FocusState::Blured {
                             last_focused_webview_label: Some(label.clone()),
                         };
