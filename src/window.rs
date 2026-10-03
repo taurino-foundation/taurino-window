@@ -464,7 +464,7 @@ impl Window {
 
         window_id: WindowId,
 
-        webview_label: String,
+        window_label: String,
 
         menu: Option<WindowMenu>,
 
@@ -506,7 +506,7 @@ impl Window {
 
             id: window_id,
 
-            label: webview_label,
+            label: window_label,
 
             #[cfg(windows)]
             background_color: arc_mut(background_color),
