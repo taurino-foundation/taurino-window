@@ -19,8 +19,15 @@ use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
 };
+
 #[cfg(target_os = "macos")]
-use {dpi::LogicalSize, objc2::rc::Retained, objc2::runtime::MainThreadMarker, objc2_app_kit::NSView};
+use {
+    crate::config::TitleBarStyle,
+    dpi::LogicalSize,
+    objc2::{MainThreadMarker, rc::Retained},
+    objc2_app_kit::NSView,
+    tao::platform::macos::WindowExtMacOS,
+};
 
 #[cfg(any(
     target_os = "linux",

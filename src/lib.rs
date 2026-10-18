@@ -69,5 +69,3 @@ pub trait WindowExt {
         background_color: Option<tao::window::RGBA>,
     );
 }
-
-fn main() {}
