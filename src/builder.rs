@@ -1,3 +1,7 @@
+#[cfg(target_os = "macos")]
+use crate::config::TitleBarStyle;
+#[cfg(target_os = "macos")]
+use dpi::Position;
 use {
     crate::{
         config::{Color, WindowSizeConstraints},
@@ -8,12 +12,11 @@ use {
     tao::window::{Fullscreen, Theme as TaoTheme, WindowBuilder as TaoWindowBuilder},
     taurino_tools::{Icon, Theme},
 };
-
 #[cfg(windows)]
 use {tao::platform::windows::WindowBuilderExtWindows, windows::Win32::Foundation::HWND};
 
 #[cfg(target_os = "macos")]
-use {crate::config::TitleBarStyle, tao::platform::macos::WindowBuilderExtMacOS};
+use tao::platform::macos::WindowBuilderExtMacOS;
 
 #[cfg(target_os = "android")]
 use tao::platform::android::WindowExtAndroid;

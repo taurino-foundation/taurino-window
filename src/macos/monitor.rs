@@ -1,4 +1,4 @@
-use {crate::config::PhysicalRect, crate::platforms::MonitorExt, dpi::LogicalSize};
+use {crate::MonitorExt, crate::config::PhysicalRect, dpi::LogicalSize};
 impl MonitorExt for tao::monitor::MonitorHandle {
     fn work_area(&self) -> PhysicalRect<i32, u32> {
         use {objc2_app_kit::NSScreen, tao::platform::macos::MonitorHandleExtMacOS};

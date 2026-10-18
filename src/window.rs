@@ -15,11 +15,12 @@ use anyhow::{Result, anyhow};
 use dpi::{PhysicalPosition, PhysicalSize, Position, Size};
 use parking_lot::Mutex;
 use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, WindowHandle};
-
 use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
 };
+#[cfg(target_os = "macos")]
+use {dpi::LogicalSize, objc2::rc::Retained, objc2::runtime::MainThreadMarker, objc2_app_kit::NSView};
 
 #[cfg(any(
     target_os = "linux",
