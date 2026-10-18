@@ -29,6 +29,9 @@ use taurino_tools::Rect;
 ))]
 use wry::WebViewBuilderExtUnix;
 
+#[cfg(target_vendor = "apple")]
+use wry::WebViewExtDarwin;
+
 use serde::Serialize;
 use serialize_to_javascript::{Options, Serialized};
 use wry::WebView as WryWebView;
