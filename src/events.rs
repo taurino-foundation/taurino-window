@@ -1,33 +1,28 @@
 #[cfg(windows)]
 use crate::config::FocusState;
-#[cfg(windows)]
-use crate::window::Window;
+
 use crate::{
     config::{WebViewId, WindowId},
     utils::DeviceRegistry,
-    window::inner_size,
+    window::{Window, inner_size},
 };
+
 use serde::Serialize;
-use std::ops::Deref;
-use std::sync::atomic::Ordering;
-use std::{path::PathBuf, pin::Pin};
-use tao::event_loop::ControlFlow;
+
+use std::{ops::Deref, path::PathBuf, pin::Pin, sync::atomic::Ordering};
+
 use tao::{
     dpi::{PhysicalPosition, PhysicalSize},
     event::{
-        DeviceEvent, ElementState, Force, KeyEvent, MouseButton as TaoMouseButton, MouseScrollDelta, RawKeyEvent,
-        Touch, TouchPhase, WindowEvent as TaoWindowEvent,
+        DeviceEvent, ElementState, Event as TaoLoopEvent, Force, KeyEvent, MouseButton as TaoMouseButton,
+        MouseScrollDelta, RawKeyEvent, Touch, TouchPhase, WindowEvent as TaoWindowEvent,
+    },
+    event_loop::{
+        ControlFlow, EventLoop as TaoLoop, EventLoopBuilder as TaoLoopBuilder, EventLoopClosed as TaoLoopClosed,
+        EventLoopProxy as TaoLoopProxy, EventLoopWindowTarget as TaoLoopWindowTarget,
     },
     keyboard::{Key, KeyCode, KeyLocation, ModifiersState},
     window::Theme,
-};
-
-use tao::{
-    event::Event as TaoLoopEvent,
-    event_loop::{
-        EventLoop as TaoLoop, EventLoopBuilder as TaoLoopBuilder, EventLoopClosed as TaoLoopClosed,
-        EventLoopProxy as TaoLoopProxy, EventLoopWindowTarget as TaoLoopWindowTarget,
-    },
 };
 
 pub type TargetCallback = Pin<Box<dyn Fn(&EventWindowTarget, &mut ControlFlow) -> anyhow::Result<()> + Send>>;

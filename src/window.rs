@@ -1,8 +1,5 @@
-#[cfg(windows)]
-use crate::undecorated_resizing;
-#[cfg(windows)]
-use crate::{WindowExt, config::FocusState};
 use crate::{
+    WindowExt,
     config::{
         Color, CursorIcon, Monitor, ProgressBarState, ResizeDirection, UserAttentionType, WebViewId, WindowId,
         WindowSizeConstraints,
@@ -10,24 +7,42 @@ use crate::{
     webview::{JsEvaluator, WebView, WebViewManager},
     wrappers::{CursorIconWrapper, MonitorHandleWrapper, ProgressBarStateWrapper, UserAttentionTypeWrapper},
 };
+
+#[cfg(windows)]
+use crate::{config::FocusState, undecorated_resizing};
+
 use anyhow::{Result, anyhow};
 use dpi::{PhysicalPosition, PhysicalSize, Position, Size};
 use parking_lot::Mutex;
 use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, WindowHandle};
+
 use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
 };
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
+use tao::platform::unix::WindowExtUnix;
+
 #[cfg(windows)]
 use tao::platform::windows::WindowExtWindows;
+
 use tao::{
     monitor::MonitorHandle,
     window::{Theme as TaoTheme, Window as TaoWindow},
 };
+
 use taurino_tools::{
     CheckMenuItem, Icon, IconMenuItem, IsMenuItem, Menu, MenuId, MenuItem, MenuItemKind, NativeIcon,
     PredefinedMenuItem, Submenu, Theme, WindowMenu,
 };
+
 #[cfg(windows)]
 type WindowSurface = softbuffer::Surface<Arc<TaoWindow>, Arc<TaoWindow>>;
 

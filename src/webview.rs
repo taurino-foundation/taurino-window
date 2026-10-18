@@ -1,4 +1,12 @@
 use std::collections::HashSet;
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
+use tao::platform::unix::WindowExtUnix;
 
 #[cfg(windows)]
 use crate::config::FocusState;
@@ -12,6 +20,14 @@ use parking_lot::Mutex;
 #[cfg(windows)]
 use tao::platform::windows::WindowExtWindows;
 use taurino_tools::Rect;
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
+use wry::WebViewBuilderExtUnix;
 
 use serde::Serialize;
 use serialize_to_javascript::{Options, Serialized};
