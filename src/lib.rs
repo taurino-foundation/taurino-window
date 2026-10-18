@@ -1,34 +1,119 @@
-pub mod events;
-use crate::config::PhysicalRect;
+
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
+// ============================================================
+// Modules
+// ============================================================
+
 pub mod builder;
 pub mod config;
+pub mod events;
+mod utils;
+pub mod webview;
+pub mod window;
+
 mod platform_webview;
+mod wrappers;
+
+use crate::config::PhysicalRect;
+
+// ============================================================
+// Platform Modules
+// ============================================================
+
+#[cfg(windows)]
+pub mod windows;
+
+#[cfg(target_os = "macos")]
+pub mod macos;
+
 #[cfg(any(
     windows,
     target_os = "linux",
     target_os = "dragonfly",
     target_os = "freebsd",
     target_os = "netbsd",
-    target_os = "openbsd"
+    target_os = "openbsd",
 ))]
 pub mod undecorated_resizing;
-pub mod utils;
-pub mod webview;
-pub mod window;
-mod wrappers;
 
 #[cfg(any(
     target_os = "linux",
     target_os = "dragonfly",
     target_os = "freebsd",
     target_os = "netbsd",
-    target_os = "openbsd"
+    target_os = "openbsd",
 ))]
 pub mod linux;
-#[cfg(target_os = "macos")]
-pub mod macos;
+
+// ============================================================
+// Cross-Platform Low-Level Reexports
+// ============================================================
+
+pub use {
+    anyhow,
+    dpi,
+    getrandom,
+    log,
+    parking_lot,
+    raw_window_handle,
+    serde,
+    serde_json,
+    serde_with,
+    serialize_to_javascript,
+    tao,
+    taurino_tools,
+    url,
+    uuid,
+    wry,
+};
+
+// ============================================================
+// Windows Low-Level Reexports
+// ============================================================
+
 #[cfg(windows)]
-pub mod windows;
+pub use {
+    once_cell,
+    softbuffer,
+    webview2_com,
+    windows as windows_api,
+};
+
+// ============================================================
+// macOS Low-Level Reexports
+// ============================================================
+
+#[cfg(target_os = "macos")]
+pub use {
+    block2,
+    objc2,
+    objc2_app_kit,
+    objc2_foundation,
+    objc2_web_kit,
+    security_framework,
+    x509_parser,
+    x_win,
+};
+
+// ============================================================
+// Linux / BSD Low-Level Reexports
+// ============================================================
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+))]
+pub use {
+    gtk,
+    webkit2gtk,
+};
+
+
+
 
 pub trait MonitorExt {
     /// Get the work area of this monitor
