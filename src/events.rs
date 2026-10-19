@@ -7,7 +7,10 @@ use crate::{
     window::{Window, inner_size},
 };
 
-use serde::Serialize;
+use {
+    serde::{Deserialize, Serialize},
+    serde_json::Value,
+};
 
 use std::{ops::Deref, path::PathBuf, pin::Pin, sync::atomic::Ordering};
 
@@ -24,6 +27,49 @@ use tao::{
     keyboard::{Key, KeyCode, KeyLocation, ModifiersState},
     window::Theme,
 };
+
+
+#[derive(Debug)]
+pub enum IPCMessage {
+    Send(Vec<u8>),
+}
+
+#[derive(Debug, Clone)]
+pub enum IpcEvent {
+    Message(Vec<u8>),
+    Disconnected(String),
+}
+
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InvokeRequest {
+    pub cmd: String,
+    pub callback: u32,
+    pub error: u32,
+
+    #[serde(default)]
+    pub payload: Value,
+
+    #[serde(default)]
+    pub options: Option<Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InvokeResponse {
+    pub ok: bool,
+    pub data: Value,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NotificationTarget {
+    pub webview_label: String,
+
+    #[serde(default)]
+    pub window_label: Option<String>,
+}
+
 
 pub type TargetCallback = Pin<Box<dyn Fn(&EventWindowTarget, &mut ControlFlow) -> anyhow::Result<()> + Send>>;
 pub struct EventWithTarget(TargetCallback);
@@ -53,6 +99,21 @@ pub enum EventLoopMessage {
     WindowEvent(WindowEvent),
     WebViewEvent(WindowId, WebViewId, WebViewEvent),
     FullscreenChanged(WindowId, bool),
+    Shutdown,
+    EvalScript(String, String, String),
+    JsInvoke {
+        window_label: String,
+        webview_label: String,
+        request: InvokeRequest,
+    },
+
+    JsReply {
+        window_label: String,
+        webview_label: String,
+        request: InvokeRequest,
+        response: std::result::Result<InvokeResponse, String>,
+    },
+    IPC(IpcEvent),
 }
 
 pub type EventLoop = TaoLoop<EventLoopMessage>;
