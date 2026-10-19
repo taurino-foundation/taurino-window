@@ -77,9 +77,10 @@ pub use {
     once_cell,
     softbuffer,
     webview2_com,
-    windows as windows_api,
 };
 
+#[cfg(windows)]
+pub use ::windows as windows_api;
 // ============================================================
 // macOS Low-Level Reexports
 // ============================================================
