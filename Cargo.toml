@@ -16,7 +16,7 @@ url = { version = "2", features = ["serde"]  }
 dpi = { version = "0.1", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 serde = { version = "1", features = ["derive"] }
-parking_lot = "0.12.5"
+parking_lot = "0.13.0"
 getrandom = { version = "0.4", features = ["std"] }
 raw-window-handle = "0.6"
 serde_with = "3.24.0"
